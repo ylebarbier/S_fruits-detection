@@ -1,20 +1,23 @@
 {
     "name": "fruits-detection",
     "description": "This is a Cytomine app for detecting fruits on paintings",
-    "command-line": "python app.py [CYTOMINE_HOST] [CYTOMINE_PUBLIC_KEY] [CYTOMINE_PRIVATE_KEY] [CYTOMINE_ID_PROJECT] [CYTOMINE_ID_SOFTWARE] [IMAGE]",
+    "command-line": "python app.py [CYTOMINE_HOST] [CYTOMINE_PUBLIC_KEY] [CYTOMINE_PRIVATE_KEY] [CYTOMINE_ID_PROJECT] [CYTOMINE_ID_SOFTWARE] [IMAGES]",
     "container-image": {
             "type": "singularity",
             "image": "ylebarbier/s_fruits-detection"
     },
     "inputs": [
         {
-            "id": "image",
-            "name": "Image ID",
-            "description": "ID of image to detect fruits in",
-            "type": "String",
+            "id": "images",
+            "name": "Images",
+            "description": "Images to detect fruits in",
+            "type": "ListDomain",
             "optional": false,
             "value-key": "[@ID]",
-            "command-line-flag": "--@id"
+            "command-line-flag": "--@id",
+            "uri": "/api/project/$currentProject$/imageinstance.json",
+            "uri-print-attribute": "instanceFilename",
+            "uri-sort-attribute": "instanceFilename"
         },
         {
             "id": "cytomine_host",

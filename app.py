@@ -8,7 +8,7 @@ import yolov5.detect
 
 from cytomine.models import Annotation
 from cytomine import CytomineJob
-from cytomine.models.image import ImageInstance
+from cytomine.models.image import ImageInstance, ImageInstanceCollection
 
 
 mapping = {0: 549437565, 1: 549437575, 2: 549437583,3: 549437593, 4: 549437601, 5: 549437615, 6: 549437623 ,7: 549437631 ,8: 549437641, 9: 549437649, 10: 549437657,
@@ -20,49 +20,60 @@ def main(argv):
      with CytomineJob.from_cli(argv) as cj:
         params = cj.parameters
       
-        image = ImageInstance().fetch(params.image)
-        image.dump()
+        images = ImageInstanceCollection().fetch_with_filter("project", params.cytomine_id_project)
+
+        if params.images != 'all':
+            ids = [int(id) for id in params.images.split(',')]
+            images = {image.id: image for image in images}
+            images = [images[id] for id in ids]
+        
+        id_results = 0
+        
+        for image in images:
+
+            image.dump()
 
 
-        imw = image.width
-        imh = image.height
+            imw = image.width
+            imh = image.height
 
-        sys.argv = sys.argv[:1]    
-        opt = yolov5.detect.parse_opt()
-        opt.weights = '/fruits_detection/yolo.pt'
-        opt.source = '{}.jpg'.format(params.image)
-        opt.save_txt = True
-        yolov5.detect.main(opt)
+            sys.argv = sys.argv[:1]    
+            opt = yolov5.detect.parse_opt()
+            opt.weights = '/fruits_detection/yolo.pt'
+            opt.source = '{}.jpg'.format(image.id)
+            opt.save_txt = True
+            yolov5.detect.main(opt)
 
-        df = pd.read_csv("/fruits_detection/yolov5/runs/detect/exp/labels/{}.txt".format(params.image), header=None, sep=" ", names=['label', 'x', 'y', 'w', 'h'])
+            df = pd.read_csv("/fruits_detection/yolov5/runs/detect/exp{}/labels/{}.txt".format(id_results if id_results > 0 else '' ,image.id), header=None, sep=" ", names=['label', 'x', 'y', 'w', 'h'])
 
-        for i in range(len(df)):
-            x = df.loc[i]['x']
-            y = df.loc[i]['y']
-            w = df.loc[i]['w']
-            h = df.loc[i]['h']
-            label = df.loc[i]['label']
+            for i in range(len(df)):
+                x = df.loc[i]['x']
+                y = df.loc[i]['y']
+                w = df.loc[i]['w']
+                h = df.loc[i]['h']
+                label = df.loc[i]['label']
 
-            x *= imw
-            y *= imh
-            w *= imw
-            h *= imh
+                x *= imw
+                y *= imh
+                w *= imw
+                h *= imh
 
-            y = imh - y
+                y = imh - y
 
-            x1 = x - w/2
-            x2 = x + w/2
-            y1 = y - h/2
-            y2 = y + h/2
+                x1 = x - w/2
+                x2 = x + w/2
+                y1 = y - h/2
+                y2 = y + h/2
 
-            geometry = Polygon([(x1,y1), (x1,y2), (x2,y2), (x2,y1), (x1,y1)])
-            
-            annotation = Annotation()
-            annotation.project = 152882438
-            annotation.image = params.image
-            annotation.location = wkt.dumps(geometry)
-            annotation.term = mapping[label]
-            annotation.save()
+                geometry = Polygon([(x1,y1), (x1,y2), (x2,y2), (x2,y1), (x1,y1)])
+                
+                annotation = Annotation()
+                annotation.project = params.cytomine_id_project
+                annotation.image = image.id
+                annotation.location = wkt.dumps(geometry)
+                annotation.term = mapping[label]
+                annotation.save()
+                id_results += 1
 
 if __name__ == "__main__":
     main(sys.argv[1:])
