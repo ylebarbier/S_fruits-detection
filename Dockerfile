@@ -1,6 +1,8 @@
 FROM cytomineuliege/software-python3-base:latest
 RUN mkdir /fruits_detection
 RUN mkdir /fruits_detection/yolov5
+RUN mkdir /fruits_detection/exp
+RUN chmod -R 777 /fruits_detection
 RUN git clone https://github.com/ultralytics/yolov5.git /fruits_detection/yolov5
 RUN pip install -r /fruits_detection/yolov5/requirements.txt
 RUN pip install opencv-contrib-python-headless==4.5.5.62
