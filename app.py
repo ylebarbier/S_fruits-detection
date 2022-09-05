@@ -36,12 +36,12 @@ def main(argv):
             imw = image.width
             imh = image.height
 
-            yolov5.detect.run(weights='/fruits_detection/yolo.pt', source='{}.jpg'.format(image.id), save_txt=True, exist_ok=True)
+            yolov5.detect.run(weights='/fruits_detection/yolo.pt', source='{}.jpg'.format(image.id), save_txt=True, project='/fruits_detection', exist_ok=True)
 
-            if not os.path.exists("/fruits_detection/yolov5/runs/detect/exp/labels/{}.txt".format(image.id)):
+            if not os.path.exists("/fruits_detection/exp/labels/{}.txt".format(image.id)):
                 continue
 
-            df = pd.read_csv("/fruits_detection/yolov5/runs/detect/exp/labels/{}.txt".format(image.id), header=None, sep=" ", names=['label', 'x', 'y', 'w', 'h'])
+            df = pd.read_csv("/fruits_detection/exp/labels/{}.txt".format(image.id), header=None, sep=" ", names=['label', 'x', 'y', 'w', 'h'])
 
             for i in range(len(df)):
                 x = df.loc[i]['x']
