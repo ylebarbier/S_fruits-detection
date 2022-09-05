@@ -1,4 +1,5 @@
 import sys
+import os
 import pandas as pd
 from PIL import Image
 from shapely.geometry import Polygon
@@ -27,8 +28,6 @@ def main(argv):
             images = {image.id: image for image in images}
             images = [images[id] for id in ids]
         
-        id_results = 0
-        
         for image in images:
 
             image.dump()
@@ -37,14 +36,12 @@ def main(argv):
             imw = image.width
             imh = image.height
 
-            sys.argv = sys.argv[:1]    
-            opt = yolov5.detect.parse_opt()
-            opt.weights = '/fruits_detection/yolo.pt'
-            opt.source = '{}.jpg'.format(image.id)
-            opt.save_txt = True
-            yolov5.detect.main(opt)
+            yolov5.detect.run(weights='/fruits_detection/yolo.pt', source='{}.jpg'.format(image.id), save_txt=True, exist_ok=True)
 
-            df = pd.read_csv("/fruits_detection/yolov5/runs/detect/exp{}/labels/{}.txt".format(id_results if id_results > 0 else '' ,image.id), header=None, sep=" ", names=['label', 'x', 'y', 'w', 'h'])
+            if not os.path.exists("/fruits_detection/yolov5/runs/detect/exp/labels/{}.txt".format(image.id)):
+                continue
+
+            df = pd.read_csv("/fruits_detection/yolov5/runs/detect/exp/labels/{}.txt".format(image.id), header=None, sep=" ", names=['label', 'x', 'y', 'w', 'h'])
 
             for i in range(len(df)):
                 x = df.loc[i]['x']
@@ -73,7 +70,6 @@ def main(argv):
                 annotation.location = wkt.dumps(geometry)
                 annotation.term = mapping[label]
                 annotation.save()
-                id_results += 1
 
 if __name__ == "__main__":
     main(sys.argv[1:])
